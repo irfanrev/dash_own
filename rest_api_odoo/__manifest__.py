@@ -20,18 +20,48 @@
 #
 #############################################################################
 {
-    "name": "Odoo rest API",
-    "version": "17.0.1.0.2",
+    "name": "Odoo REST API + Owner Dashboard",
+    "version": "17.0.2.0.0",
     "category": "Tools",
-    "summary": """This app helps to interact with odoo, backend with help of 
-     rest api requests""",
-    "description": """The odoo Rest API module allow us to connect to database 
-     with the help of GET , POST , PUT and DELETE requests""",
+    "summary": """REST API endpoints including Owner Dashboard for Resort/Hospitality business monitoring""",
+    "description": """
+        REST API Module with Owner Dashboard
+        ====================================
+
+        This module provides:
+        - Standard REST API endpoints (GET, POST, PUT, DELETE)
+        - Owner Dashboard API endpoint (/api/owner_dashboard/summary)
+
+        Owner Dashboard Features:
+        - KPI Summary (Revenue, Orders, Customers, Cash Balance)
+        - Finance Summary (Receivables, Payables, Assets, Liabilities, Equity)
+        - Logistics Summary (Inventory Value, Low Stock, Pending Deliveries)
+        - Recent Transactions from Invoices and POS
+        - 6-Month Sales Trend
+        - Top Products and Revenue by Category
+        - Cashflow Analysis
+        - Income Statement
+        - Balance Sheet
+        - POS Summary (Today, Week, Month)
+
+        Supported Modules (optional):
+        - Sale (for B2B orders)
+        - Point of Sale (for retail transactions)
+        - Purchase (for procurement)
+        - Stock (for inventory)
+        - Account (for financial data)
+
+        Note: Dashboard works with whatever modules are installed.
+        Missing modules will show zero/empty data for those sections.
+    """,
     'author': 'Cybrosys Techno Solutions',
     'company': 'Cybrosys Techno Solutions',
     'maintainer': 'Cybrosys Techno Solutions',
     'website': "https://www.cybrosys.com",
-    "depends": ['base', 'web'],
+    "depends": ['base', 'web', 'account'],
+    "external_dependencies": {
+        "python": ["dateutil"],
+    },
     "data": [
         'security/ir.model.access.csv',
         'views/res_users_views.xml',
