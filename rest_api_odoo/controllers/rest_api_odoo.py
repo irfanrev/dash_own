@@ -460,13 +460,12 @@ class RestApi(http.Controller):
                     {"id": 5, "type": "Food Court", "amount": 1200000, "date": "2026-02-18", "status": "Completed"}
                 ],
                 "sales_trend": [
-                    {"name": "Jan", "resort": 400, "resto": 240, "wahana": 240},
-                    {"name": "Feb", "resort": 300, "resto": 139, "wahana": 221},
-                    {"name": "Mar", "resort": 200, "resto": 980, "wahana": 229},
-                    {"name": "Apr", "resort": 278, "resto": 390, "wahana": 200},
-                    {"name": "May", "resort": 189, "resto": 480, "wahana": 218},
-                    {"name": "Jun", "resort": 239, "resto": 380, "wahana": 250},
-                    {"name": "Jul", "resort": 349, "resto": 430, "wahana": 210}
+                    {"name": "Jan", "revenue": 100000000},
+                    {"name": "Feb", "revenue": 120000000},
+                    {"name": "Mar", "revenue": 95000000},
+                    {"name": "Apr", "revenue": 150000000},
+                    {"name": "May", "revenue": 180000000},
+                    {"name": "Jun", "revenue": 140000000}
                 ],
                 "sales_detail": {
                     "pos_revenue": 850000000,
@@ -483,7 +482,8 @@ class RestApi(http.Controller):
                     "revenue_by_unit": [
                         {"name": "Resort", "value": 650000000, "color": "#10b981"},
                         {"name": "Wahana", "value": 350000000, "color": "#3b82f6"},
-                        {"name": "Resto & Cafe", "value": 250000000, "color": "#f59e0b"}
+                        {"name": "Resto & Cafe", "value": 180000000, "color": "#f59e0b"},
+                        {"name": "Food Court", "value": 70000000, "color": "#8b5cf6"}
                     ]
                 },
                 "finance_detail": {
@@ -510,6 +510,86 @@ class RestApi(http.Controller):
                         "net_profit_before_tax": 400000000,
                         "tax": 50000000,
                         "net_profit": 350000000
+                    },
+                    "balance_sheet": {
+                        "current_assets": {
+                            "cash_and_bank": 450000000,
+                            "accounts_receivable": 25000000,
+                            "inventory": 310000000,
+                            "prepaid_expenses": 15000000,
+                            "total": 800000000
+                        },
+                        "non_current_assets": {
+                            "property_equipment": 1500000000,
+                            "accumulated_depreciation": -200000000,
+                            "intangible_assets": 100000000,
+                            "other_assets": 300000000,
+                            "total": 1700000000
+                        },
+                        "total_assets": 2500000000,
+                        "current_liabilities": {
+                            "accounts_payable": 15000000,
+                            "accrued_expenses": 35000000,
+                            "short_term_debt": 50000000,
+                            "taxes_payable": 20000000,
+                            "total": 120000000
+                        },
+                        "non_current_liabilities": {
+                            "long_term_debt": 350000000,
+                            "other_liabilities": 30000000,
+                            "total": 380000000
+                        },
+                        "total_liabilities": 500000000,
+                        "equity": {
+                            "capital_stock": 1500000000,
+                            "retained_earnings": 500000000,
+                            "total": 2000000000
+                        }
+                    }
+                },
+                "logistics_detail": {
+                    "inventory_by_category": [
+                        {"name": "Bahan Makanan", "value": 120000000, "items": 245, "color": "#10b981"},
+                        {"name": "Minuman", "value": 45000000, "items": 120, "color": "#3b82f6"},
+                        {"name": "Perlengkapan Kamar", "value": 85000000, "items": 180, "color": "#f59e0b"},
+                        {"name": "Alat Kebersihan", "value": 25000000, "items": 95, "color": "#8b5cf6"},
+                        {"name": "Spare Part Wahana", "value": 35000000, "items": 45, "color": "#ef4444"}
+                    ],
+                    "low_stock_alerts": [
+                        {"name": "Beras Premium 25kg", "current_stock": 5, "min_stock": 20, "unit": "Karung", "category": "Bahan Makanan"},
+                        {"name": "Minyak Goreng 18L", "current_stock": 8, "min_stock": 25, "unit": "Jerigen", "category": "Bahan Makanan"},
+                        {"name": "Handuk Mandi Putih", "current_stock": 15, "min_stock": 50, "unit": "Pcs", "category": "Perlengkapan Kamar"},
+                        {"name": "Sabun Cair 5L", "current_stock": 3, "min_stock": 15, "unit": "Galon", "category": "Alat Kebersihan"},
+                        {"name": "Tisu Toilet 12 Roll", "current_stock": 10, "min_stock": 40, "unit": "Pack", "category": "Perlengkapan Kamar"}
+                    ],
+                    "pending_orders": [
+                        {"id": "PO-2026-0245", "vendor": "CV Sumber Pangan", "items": 15, "total": 12500000, "expected_date": "2026-02-27", "status": "In Transit"},
+                        {"id": "PO-2026-0244", "vendor": "PT Linen Indonesia", "items": 8, "total": 8500000, "expected_date": "2026-02-28", "status": "Processing"},
+                        {"id": "PO-2026-0243", "vendor": "UD Bersih Cemerlang", "items": 12, "total": 4200000, "expected_date": "2026-03-01", "status": "Processing"},
+                        {"id": "PO-2026-0242", "vendor": "PT Wahana Parts", "items": 5, "total": 15000000, "expected_date": "2026-03-02", "status": "Confirmed"}
+                    ],
+                    "delivery_status": {
+                        "in_transit": 3,
+                        "processing": 8,
+                        "confirmed": 5,
+                        "completed_this_week": 12
+                    }
+                },
+                "pos_summary": {
+                    "today": {
+                        "transactions": 156,
+                        "revenue": 28500000,
+                        "avg_ticket": 182692
+                    },
+                    "this_week": {
+                        "transactions": 892,
+                        "revenue": 165000000,
+                        "avg_ticket": 185022
+                    },
+                    "this_month": {
+                        "transactions": 3100,
+                        "revenue": 850000000,
+                        "avg_ticket": 274193
                     }
                 }
             }

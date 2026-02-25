@@ -11,7 +11,17 @@ import {
   ShoppingCart,
   Wallet,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Store,
+  Tag,
+  BarChart2,
+  PieChart as PieChartIcon,
+  Menu,
+  X,
+  AlertTriangle,
+  Truck,
+  ClipboardList,
+  Building2
 } from 'lucide-react';
 import {
   AreaChart,
@@ -20,7 +30,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  BarChart,
+  Bar
 } from 'recharts';
 
 // Mock data fallback in case Odoo API goes down or CORS fails
@@ -75,7 +91,8 @@ const mockDataFallback = {
     revenue_by_unit: [
       { name: "Resort", value: 650000000, color: "#10b981" },
       { name: "Wahana", value: 350000000, color: "#3b82f6" },
-      { name: "Resto & Cafe", value: 250000000, color: "#f59e0b" }
+      { name: "Resto & Cafe", value: 180000000, color: "#f59e0b" },
+      { name: "Food Court", value: 70000000, color: "#8b5cf6" }
     ]
   },
   finance_detail: {
@@ -102,7 +119,75 @@ const mockDataFallback = {
       net_profit_before_tax: 400000000,
       tax: 50000000,
       net_profit: 350000000
+    },
+    balance_sheet: {
+      current_assets: {
+        cash_and_bank: 450000000,
+        accounts_receivable: 25000000,
+        inventory: 310000000,
+        prepaid_expenses: 15000000,
+        total: 800000000
+      },
+      non_current_assets: {
+        property_equipment: 1500000000,
+        accumulated_depreciation: -200000000,
+        intangible_assets: 100000000,
+        other_assets: 300000000,
+        total: 1700000000
+      },
+      total_assets: 2500000000,
+      current_liabilities: {
+        accounts_payable: 15000000,
+        accrued_expenses: 35000000,
+        short_term_debt: 50000000,
+        taxes_payable: 20000000,
+        total: 120000000
+      },
+      non_current_liabilities: {
+        long_term_debt: 350000000,
+        other_liabilities: 30000000,
+        total: 380000000
+      },
+      total_liabilities: 500000000,
+      equity: {
+        capital_stock: 1500000000,
+        retained_earnings: 500000000,
+        total: 2000000000
+      }
     }
+  },
+  logistics_detail: {
+    inventory_by_category: [
+      { name: "Bahan Makanan", value: 120000000, items: 245, color: "#10b981" },
+      { name: "Minuman", value: 45000000, items: 120, color: "#3b82f6" },
+      { name: "Perlengkapan Kamar", value: 85000000, items: 180, color: "#f59e0b" },
+      { name: "Alat Kebersihan", value: 25000000, items: 95, color: "#8b5cf6" },
+      { name: "Spare Part Wahana", value: 35000000, items: 45, color: "#ef4444" }
+    ],
+    low_stock_alerts: [
+      { name: "Beras Premium 25kg", current_stock: 5, min_stock: 20, unit: "Karung", category: "Bahan Makanan" },
+      { name: "Minyak Goreng 18L", current_stock: 8, min_stock: 25, unit: "Jerigen", category: "Bahan Makanan" },
+      { name: "Handuk Mandi Putih", current_stock: 15, min_stock: 50, unit: "Pcs", category: "Perlengkapan Kamar" },
+      { name: "Sabun Cair 5L", current_stock: 3, min_stock: 15, unit: "Galon", category: "Alat Kebersihan" },
+      { name: "Tisu Toilet 12 Roll", current_stock: 10, min_stock: 40, unit: "Pack", category: "Perlengkapan Kamar" }
+    ],
+    pending_orders: [
+      { id: "PO-2026-0245", vendor: "CV Sumber Pangan", items: 15, total: 12500000, expected_date: "2026-02-27", status: "In Transit" },
+      { id: "PO-2026-0244", vendor: "PT Linen Indonesia", items: 8, total: 8500000, expected_date: "2026-02-28", status: "Processing" },
+      { id: "PO-2026-0243", vendor: "UD Bersih Cemerlang", items: 12, total: 4200000, expected_date: "2026-03-01", status: "Processing" },
+      { id: "PO-2026-0242", vendor: "PT Wahana Parts", items: 5, total: 15000000, expected_date: "2026-03-02", status: "Confirmed" }
+    ],
+    delivery_status: {
+      in_transit: 3,
+      processing: 8,
+      confirmed: 5,
+      completed_this_week: 12
+    }
+  },
+  pos_summary: {
+    today: { transactions: 156, revenue: 28500000, avg_ticket: 182692 },
+    this_week: { transactions: 892, revenue: 165000000, avg_ticket: 185022 },
+    this_month: { transactions: 3100, revenue: 850000000, avg_ticket: 274193 }
   }
 };
 
@@ -119,12 +204,13 @@ export default function App() {
   const [data, setData] = useState(mockDataFallback);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Fetch from Odoo custom API endpoint
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8069/api/owner_dashboard/summary');
+        const response = await axios.get('http://103.187.114.7:1314/api/owner_dashboard/summary');
         if (response.data && response.data.status === 'success') {
           // If the structure diverges, we map it, but the python controller provides it cleanly:
           setData(response.data.data);
@@ -144,15 +230,30 @@ export default function App() {
         return <PenjualanTab data={data} />;
       case 'keuangan':
         return <KeuanganTab data={data} />;
+      case 'logistik':
+        return <LogistikTab data={data} />;
       case 'dashboard':
       default:
         return <DashboardOverview data={data} />;
     }
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-100 font-sans overflow-hidden">
-      {/* Sidebar */}
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Desktop */}
       <aside className="w-64 bg-[#1e293b] border-r border-slate-700/50 hidden md:flex flex-col z-20">
         <div className="h-16 flex items-center px-6 border-b border-slate-700/50">
           <div className="flex items-center gap-2 text-emerald-400">
@@ -165,25 +266,75 @@ export default function App() {
             icon={<LayoutDashboard className="w-5 h-5" />}
             label="Dashboard"
             active={activeTab === 'dashboard'}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabChange('dashboard')}
           />
           <SidebarItem
             icon={<ShoppingCart className="w-5 h-5" />}
             label="Penjualan & POS"
             active={activeTab === 'penjualan'}
-            onClick={() => setActiveTab('penjualan')}
+            onClick={() => handleTabChange('penjualan')}
           />
           <SidebarItem
             icon={<TrendingUp className="w-5 h-5" />}
             label="Keuangan"
             active={activeTab === 'keuangan'}
-            onClick={() => setActiveTab('keuangan')}
+            onClick={() => handleTabChange('keuangan')}
           />
           <SidebarItem
             icon={<Package className="w-5 h-5" />}
             label="Logistik"
             active={activeTab === 'logistik'}
-            onClick={() => { }}
+            onClick={() => handleTabChange('logistik')}
+          />
+        </nav>
+        <div className="p-4 border-t border-slate-700/50">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/50">
+            <div className="w-10 h-10 rounded-full bg-linear-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold">
+              OW
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Owner</p>
+              <p className="text-xs text-slate-400">Super Admin</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-[#1e293b] border-r border-slate-700/50 flex flex-col z-40 transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-700/50">
+          <div className="flex items-center gap-2 text-emerald-400">
+            <Activity className="w-6 h-6" />
+            <span className="text-xl font-bold tracking-tight text-white">GTP<span className="text-emerald-400 font-light">Owner</span></span>
+          </div>
+          <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <nav className="flex-1 p-4 space-y-2">
+          <SidebarItem
+            icon={<LayoutDashboard className="w-5 h-5" />}
+            label="Dashboard"
+            active={activeTab === 'dashboard'}
+            onClick={() => handleTabChange('dashboard')}
+          />
+          <SidebarItem
+            icon={<ShoppingCart className="w-5 h-5" />}
+            label="Penjualan & POS"
+            active={activeTab === 'penjualan'}
+            onClick={() => handleTabChange('penjualan')}
+          />
+          <SidebarItem
+            icon={<TrendingUp className="w-5 h-5" />}
+            label="Keuangan"
+            active={activeTab === 'keuangan'}
+            onClick={() => handleTabChange('keuangan')}
+          />
+          <SidebarItem
+            icon={<Package className="w-5 h-5" />}
+            label="Logistik"
+            active={activeTab === 'logistik'}
+            onClick={() => handleTabChange('logistik')}
           />
         </nav>
         <div className="p-4 border-t border-slate-700/50">
@@ -206,23 +357,33 @@ export default function App() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Header */}
-        <header className="h-16 bg-[#1e293b]/50 backdrop-blur-md border-b border-slate-700/50 flex shrink-0 items-center justify-between px-6 sticky top-0 z-10">
-          <div>
-            <h1 className="text-xl font-semibold text-white capitalize">
-              {activeTab === 'dashboard' ? 'Ringkasan Bisnis' :
-                activeTab === 'penjualan' ? 'Analisis Penjualan & POS' :
-                  activeTab === 'keuangan' ? 'Laporan Keuangan' : 'Logistik'}
-            </h1>
-            <p className="text-xs text-slate-400">
-              {activeTab === 'dashboard' ? 'Ikhtisar performa seluruh unit usaha (Resort, Resto, Wahana).' :
-                activeTab === 'penjualan' ? 'Rincian transaksi POS, produk terlaris, dan distribusi pendapatan.' :
-                  'Detail arus kas, laba rugi, dan rasio keuangan.'}
-            </p>
+        <header className="h-16 bg-[#1e293b]/50 backdrop-blur-md border-b border-slate-700/50 flex shrink-0 items-center justify-between px-4 md:px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 text-slate-400 hover:text-white md:hidden"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div>
+              <h1 className="text-lg md:text-xl font-semibold text-white capitalize">
+                {activeTab === 'dashboard' ? 'Ringkasan Bisnis' :
+                  activeTab === 'penjualan' ? 'Analisis Penjualan & POS' :
+                    activeTab === 'keuangan' ? 'Laporan Keuangan' : 'Manajemen Logistik'}
+              </h1>
+              <p className="text-xs text-slate-400 hidden sm:block">
+                {activeTab === 'dashboard' ? 'Ikhtisar performa seluruh unit usaha (Resort, Resto, Wahana).' :
+                  activeTab === 'penjualan' ? 'Rincian transaksi POS, produk terlaris, dan distribusi pendapatan.' :
+                    activeTab === 'keuangan' ? 'Detail arus kas, laba rugi, dan rasio keuangan.' :
+                      'Pantauan inventaris, stok, dan purchase order.'}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-4 text-sm">
+            <div className="bg-slate-800 px-2 md:px-3 py-1.5 rounded-full border border-slate-700 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-slate-300">Live Update</span>
+              <span className="text-slate-300 hidden sm:inline">Live Update</span>
             </div>
           </div>
         </header>
@@ -582,8 +743,16 @@ function PenjualanTab({ data }) {
 
 // --- TAB: KEUANGAN ---
 function KeuanganTab({ data }) {
+  const balanceSheet = data.finance_detail?.balance_sheet;
+
+  // Calculate financial ratios
+  const currentRatio = balanceSheet ? (balanceSheet.current_assets.total / balanceSheet.current_liabilities.total).toFixed(2) : 0;
+  const debtToEquity = balanceSheet ? (balanceSheet.total_liabilities / balanceSheet.equity.total).toFixed(2) : 0;
+  const quickRatio = balanceSheet ? ((balanceSheet.current_assets.total - balanceSheet.current_assets.inventory) / balanceSheet.current_liabilities.total).toFixed(2) : 0;
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-8">
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Revenue" value={formatCurrency(data.finance_detail.income_statement.revenue)} icon={<TrendingUp className="w-5 h-5" />} trend="+10%" trendUp={true} gradient="from-blue-500/20" color="text-blue-400" />
         <KPICard title="HPP (COGS)" value={formatCurrency(data.finance_detail.income_statement.cogs)} icon={<Package className="w-5 h-5" />} trend="-2%" trendUp={true} gradient="from-slate-500/20" color="text-slate-400" />
@@ -591,18 +760,19 @@ function KeuanganTab({ data }) {
         <KPICard title="EBITDA" value={formatCurrency(data.finance_detail.income_statement.net_profit_before_tax)} icon={<BarChart2 className="w-5 h-5" />} trend="+15%" trendUp={true} gradient="from-emerald-500/20" color="text-emerald-400" />
       </div>
 
+      {/* Cashflow & P&L */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-[#1e293b] rounded-2xl border border-slate-700/50 p-6 shadow-xl">
+        <div className="lg:col-span-2 bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-white">Arus Kas (Cashflow)</h2>
             <p className="text-sm text-slate-400">Pemasukan vs Pengeluaran per bulan.</p>
           </div>
-          <div className="h-72">
+          <div className="h-64 md:h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.finance_detail.cashflow} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={data.finance_detail.cashflow} margin={{ top: 20, right: 10, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.5} />
                 <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000000}M`} />
+                <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000000}M`} />
                 <Tooltip
                   cursor={{ fill: '#334155', opacity: 0.2 }}
                   contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
@@ -616,7 +786,7 @@ function KeuanganTab({ data }) {
           </div>
         </div>
 
-        <div className="lg:col-span-1 bg-[#1e293b] rounded-2xl border border-slate-700/50 p-6 shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-1 bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl flex flex-col justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white mb-6">Laporan Laba Rugi</h2>
             <div className="space-y-3">
@@ -645,6 +815,423 @@ function KeuanganTab({ data }) {
                 <span className="text-emerald-400">{formatCurrency(data.finance_detail.income_statement.net_profit)}</span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Balance Sheet Section */}
+      {balanceSheet && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Assets */}
+          <div className="bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Aset</h2>
+                <p className="text-xs text-slate-400">Total: {formatCurrency(balanceSheet.total_assets)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-slate-300">Aset Lancar</span>
+                  <span className="text-sm font-bold text-blue-400">{formatCurrency(balanceSheet.current_assets.total)}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Kas & Bank</span>
+                    <span>{formatCurrency(balanceSheet.current_assets.cash_and_bank)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Piutang Usaha</span>
+                    <span>{formatCurrency(balanceSheet.current_assets.accounts_receivable)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Persediaan</span>
+                    <span>{formatCurrency(balanceSheet.current_assets.inventory)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Biaya Dibayar Dimuka</span>
+                    <span>{formatCurrency(balanceSheet.current_assets.prepaid_expenses)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-slate-300">Aset Tidak Lancar</span>
+                  <span className="text-sm font-bold text-indigo-400">{formatCurrency(balanceSheet.non_current_assets.total)}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Properti & Peralatan</span>
+                    <span>{formatCurrency(balanceSheet.non_current_assets.property_equipment)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Akum. Penyusutan</span>
+                    <span className="text-rose-400">{formatCurrency(balanceSheet.non_current_assets.accumulated_depreciation)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Aset Tak Berwujud</span>
+                    <span>{formatCurrency(balanceSheet.non_current_assets.intangible_assets)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Aset Lainnya</span>
+                    <span>{formatCurrency(balanceSheet.non_current_assets.other_assets)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Liabilities */}
+          <div className="bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Kewajiban</h2>
+                <p className="text-xs text-slate-400">Total: {formatCurrency(balanceSheet.total_liabilities)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-slate-300">Kewajiban Lancar</span>
+                  <span className="text-sm font-bold text-amber-400">{formatCurrency(balanceSheet.current_liabilities.total)}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Hutang Usaha</span>
+                    <span>{formatCurrency(balanceSheet.current_liabilities.accounts_payable)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Biaya Akrual</span>
+                    <span>{formatCurrency(balanceSheet.current_liabilities.accrued_expenses)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Hutang Jangka Pendek</span>
+                    <span>{formatCurrency(balanceSheet.current_liabilities.short_term_debt)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Pajak Terutang</span>
+                    <span>{formatCurrency(balanceSheet.current_liabilities.taxes_payable)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-slate-300">Kewajiban Jk. Panjang</span>
+                  <span className="text-sm font-bold text-rose-400">{formatCurrency(balanceSheet.non_current_liabilities.total)}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Hutang Jangka Panjang</span>
+                    <span>{formatCurrency(balanceSheet.non_current_liabilities.long_term_debt)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Kewajiban Lainnya</span>
+                    <span>{formatCurrency(balanceSheet.non_current_liabilities.other_liabilities)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Equity & Ratios */}
+          <div className="bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Ekuitas & Rasio</h2>
+                <p className="text-xs text-slate-400">Modal: {formatCurrency(balanceSheet.equity.total)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/30">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-slate-300">Ekuitas</span>
+                  <span className="text-sm font-bold text-emerald-400">{formatCurrency(balanceSheet.equity.total)}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Modal Disetor</span>
+                    <span>{formatCurrency(balanceSheet.equity.capital_stock)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Laba Ditahan</span>
+                    <span>{formatCurrency(balanceSheet.equity.retained_earnings)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/50 p-4 rounded-xl border border-slate-700/30">
+                <span className="text-sm font-medium text-slate-300 block mb-4">Rasio Keuangan</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Current Ratio</span>
+                    <span className={`text-sm font-bold ${parseFloat(currentRatio) >= 1.5 ? 'text-emerald-400' : parseFloat(currentRatio) >= 1 ? 'text-amber-400' : 'text-rose-400'}`}>
+                      {currentRatio}x
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Quick Ratio</span>
+                    <span className={`text-sm font-bold ${parseFloat(quickRatio) >= 1 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {quickRatio}x
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Debt to Equity</span>
+                    <span className={`text-sm font-bold ${parseFloat(debtToEquity) <= 0.5 ? 'text-emerald-400' : parseFloat(debtToEquity) <= 1 ? 'text-amber-400' : 'text-rose-400'}`}>
+                      {debtToEquity}x
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- TAB: LOGISTIK ---
+function LogistikTab({ data }) {
+  const logistics = data.logistics_detail || {
+    inventory_by_category: [],
+    low_stock_alerts: [],
+    pending_orders: [],
+    delivery_status: { in_transit: 0, processing: 0, confirmed: 0, completed_this_week: 0 }
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 pb-8">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Total Nilai Inventaris"
+          value={formatCurrency(data.logistics.inventory_value)}
+          icon={<Package className="w-5 h-5" />}
+          trend="+3.2%"
+          trendUp={true}
+          gradient="from-indigo-500/20"
+          color="text-indigo-400"
+        />
+        <KPICard
+          title="Item Stok Menipis"
+          value={data.logistics.low_stock_items.toString()}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          trend="+2"
+          trendUp={false}
+          gradient="from-rose-500/20"
+          color="text-rose-400"
+        />
+        <KPICard
+          title="PO Menunggu Kirim"
+          value={data.logistics.pending_deliveries.toString()}
+          icon={<Truck className="w-5 h-5" />}
+          trend="-5"
+          trendUp={true}
+          gradient="from-amber-500/20"
+          color="text-amber-400"
+        />
+        <KPICard
+          title="PO Selesai Minggu Ini"
+          value={logistics.delivery_status.completed_this_week?.toString() || "12"}
+          icon={<ClipboardList className="w-5 h-5" />}
+          trend="+8"
+          trendUp={true}
+          gradient="from-emerald-500/20"
+          color="text-emerald-400"
+        />
+      </div>
+
+      {/* Inventory by Category & Delivery Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Inventory by Category Chart */}
+        <div className="lg:col-span-2 bg-[#1e293b] rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-white">Nilai Inventaris per Kategori</h2>
+            <p className="text-sm text-slate-400">Distribusi nilai stok berdasarkan kategori.</p>
+          </div>
+          <div className="h-64 md:h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={logistics.inventory_by_category}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#334155" opacity={0.5} />
+                <XAxis type="number" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000000}M`} />
+                <YAxis type="category" dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={100} />
+                <Tooltip
+                  cursor={{ fill: '#334155', opacity: 0.2 }}
+                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
+                  formatter={(value) => formatCurrency(value)}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {logistics.inventory_by_category.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Delivery Status */}
+        <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 rounded-2xl border border-slate-700/50 p-4 md:p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <h2 className="text-lg font-semibold text-white mb-1 relative z-10">Status Pengiriman</h2>
+          <p className="text-sm text-slate-400 mb-6 relative z-10">Overview status Purchase Order.</p>
+
+          <div className="grid grid-cols-2 gap-4 relative z-10">
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+                <span className="text-xs font-medium text-slate-400">Dalam Perjalanan</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-400">{logistics.delivery_status.in_transit}</p>
+            </div>
+
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                <span className="text-xs font-medium text-slate-400">Diproses</span>
+              </div>
+              <p className="text-2xl font-bold text-amber-400">{logistics.delivery_status.processing}</p>
+            </div>
+
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                <span className="text-xs font-medium text-slate-400">Dikonfirmasi</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{logistics.delivery_status.confirmed}</p>
+            </div>
+
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                <span className="text-xs font-medium text-slate-400">Selesai (7 hari)</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-300">{logistics.delivery_status.completed_this_week}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Low Stock Alerts & Pending Orders */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Low Stock Alerts */}
+        <div className="bg-[#1e293b] rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-slate-700/50 flex justify-between items-center bg-rose-500/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Peringatan Stok Menipis</h2>
+                <p className="text-xs text-slate-400">Item yang perlu segera di-restock.</p>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+                <tr>
+                  <th className="px-4 md:px-6 py-3 font-medium">Item</th>
+                  <th className="px-4 md:px-6 py-3 font-medium text-center">Stok</th>
+                  <th className="px-4 md:px-6 py-3 font-medium text-center">Min</th>
+                  <th className="px-4 md:px-6 py-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logistics.low_stock_alerts.map((item, idx) => (
+                  <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
+                    <td className="px-4 md:px-6 py-4">
+                      <p className="font-medium text-slate-200 text-xs md:text-sm">{item.name}</p>
+                      <p className="text-xs text-slate-500">{item.category}</p>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 text-center">
+                      <span className="text-rose-400 font-bold">{item.current_stock}</span>
+                      <span className="text-slate-500 text-xs ml-1">{item.unit}</span>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 text-center text-slate-400">{item.min_stock}</td>
+                    <td className="px-4 md:px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${
+                        (item.current_stock / item.min_stock) < 0.25
+                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}>
+                        {(item.current_stock / item.min_stock) < 0.25 ? 'Kritis' : 'Rendah'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pending Purchase Orders */}
+        <div className="bg-[#1e293b] rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-slate-700/50 flex justify-between items-center bg-amber-500/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+                <ClipboardList className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Purchase Order Aktif</h2>
+                <p className="text-xs text-slate-400">PO yang sedang diproses.</p>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+                <tr>
+                  <th className="px-4 md:px-6 py-3 font-medium">PO #</th>
+                  <th className="px-4 md:px-6 py-3 font-medium">Vendor</th>
+                  <th className="px-4 md:px-6 py-3 font-medium text-right">Total</th>
+                  <th className="px-4 md:px-6 py-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logistics.pending_orders.map((order, idx) => (
+                  <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
+                    <td className="px-4 md:px-6 py-4">
+                      <p className="font-medium text-slate-200 text-xs md:text-sm">{order.id}</p>
+                      <p className="text-xs text-slate-500">ETA: {order.expected_date}</p>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 text-slate-300 text-xs md:text-sm">{order.vendor}</td>
+                    <td className="px-4 md:px-6 py-4 text-right font-medium text-emerald-400 text-xs md:text-sm">{formatCurrency(order.total)}</td>
+                    <td className="px-4 md:px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${
+                        order.status === 'In Transit'
+                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          : order.status === 'Processing'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
+                        {order.status === 'In Transit' ? 'Dikirim' : order.status === 'Processing' ? 'Diproses' : 'Dikonfirmasi'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
