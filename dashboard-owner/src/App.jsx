@@ -200,6 +200,22 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+function InitialLoadingScreen() {
+  return (
+    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex items-center justify-center relative overflow-hidden">
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-2xl border border-slate-700/60 bg-[#1e293b]/80 backdrop-blur-md p-8 text-center shadow-2xl">
+        <div className="mx-auto mb-6 h-14 w-14 rounded-full border-2 border-slate-700 border-t-emerald-400 animate-spin"></div>
+        <h1 className="text-2xl font-semibold text-white">Memuat dashboard owner</h1>
+        <p className="mt-3 text-slate-300">Data sedang diproses. Mohon tunggu beberapa saat.</p>
+        <p className="mt-2 text-sm text-slate-400">Dataset awal cukup besar sehingga proses sinkronisasi bisa memerlukan waktu lebih lama.</p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [data, setData] = useState(mockDataFallback);
   const [loading, setLoading] = useState(true);
@@ -210,7 +226,7 @@ export default function App() {
     // Fetch from Odoo custom API endpoint
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://103.187.114.7:1314/api/owner_dashboard/summary');
+        const response = await axios.get('https://103.187.114.7:1314/api/owner_dashboard/summary');
         if (response.data && response.data.status === 'success') {
           // If the structure diverges, we map it, but the python controller provides it cleanly:
           setData(response.data.data);
@@ -242,6 +258,10 @@ export default function App() {
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
+
+  if (loading) {
+    return <InitialLoadingScreen />;
+  }
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-100 font-sans overflow-hidden">
@@ -1170,11 +1190,10 @@ function LogistikTab({ data }) {
                     </td>
                     <td className="px-4 md:px-6 py-4 text-center text-slate-400">{item.min_stock}</td>
                     <td className="px-4 md:px-6 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium border ${
-                        (item.current_stock / item.min_stock) < 0.25
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${(item.current_stock / item.min_stock) < 0.25
+                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        }`}>
                         {(item.current_stock / item.min_stock) < 0.25 ? 'Kritis' : 'Rendah'}
                       </span>
                     </td>
@@ -1218,13 +1237,12 @@ function LogistikTab({ data }) {
                     <td className="px-4 md:px-6 py-4 text-slate-300 text-xs md:text-sm">{order.vendor}</td>
                     <td className="px-4 md:px-6 py-4 text-right font-medium text-emerald-400 text-xs md:text-sm">{formatCurrency(order.total)}</td>
                     <td className="px-4 md:px-6 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium border ${
-                        order.status === 'In Transit'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                          : order.status === 'Processing'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium border ${order.status === 'In Transit'
+                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        : order.status === 'Processing'
+                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        }`}>
                         {order.status === 'In Transit' ? 'Dikirim' : order.status === 'Processing' ? 'Diproses' : 'Dikonfirmasi'}
                       </span>
                     </td>
